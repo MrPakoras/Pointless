@@ -17,6 +17,10 @@ tick = mixer.Sound('assets/countdown_timer.mp3').get_length()*0.63/100
 ### CODE
 
 def run(score):
+	
+	# Set PlayerWidget score
+	current_widget.points.set(score)
+
 	run_button.configure(state='disabled')
 
 	if score == 'wrong':
@@ -29,7 +33,7 @@ def run(score):
 	else:
 		# Play countdown timer
 		mixer.music.load('assets/countdown_timer.mp3')
-		mixer.music.play()
+		threading.Thread(target=mixer.music.play())
 
 		# Loop through until score is reached
 		for x in range(100-score): # loop until progress reaches score
@@ -46,20 +50,32 @@ def run(score):
 			mixer.music.stop()
 			mixer.music.load('assets/counter_stops1_3.wav')
 			mixer.music.play()
+		else:
+			threading.Thread(target=lambda: flash('pointless')).start()
 
 
 	run_button.configure(state='normal')
 
-### GUI
+
+
+
+###########
+### GUI ###
+###########
+
+
 
 ## Importing font
 appdatalocal = os.getenv('LOCALAPPDATA')
 pyglet.options['win32_gdi_font'] = True
-pyglet.font.add_file('./assets/Bangers-Regular_0.ttf')
-bangers_font = ('Bangers',50)
+pyglet.font.add_file('./assets/Baloo-Regular.ttf')
+custom_font = ('Baloo',30)
+custom_font_title = ('Baloo',60)
+
 
 master = CTk()
 master.geometry("1000x800")
+master.title('Pointless')
 set_default_color_theme('green')
 rows = ['title', 'setpoints', 'points', 'progbar', 'run'] # Index of rows so I dont have to manually update each .grid
 
@@ -78,18 +94,62 @@ colourdark = '#5a49a4'
 
 
 ## Title
-title_label = CTkLabel(mainframe, text=' Pointless ', font=bangers_font, text_color=colourmain)
-title_label.grid(row=0, column=0)
+title_label = CTkLabel(mainframe, text=' POINTLESS ', font=custom_font_title, text_color=colourmain)
+title_label.grid(row=0, column=0, sticky='nsew')
 
 
 
 ## Left Frame
-players = [['Default', '0']]
+
+# Focus event on click
+# def focus(event):
+# 	event.widget.focus_set()
+# 	# print(master.focus_get())
+
+
+
+
+players = [['Default', 23], ['P1', 354], ['P1', 87], ['P1', 832], ['P1', 96], ['P1', 3]]
+current_widget = None
+
+class PlayerWidget(CTkFrame):
+
+	def __init__(self, parent, index):
+		super().__init__(master=parent)
+
+		self.name = StringVar()
+		self.name.set(players[index][0])
+		self.points = IntVar()
+		self.points.set(players[index][1])
+
+
+
+		CTkEntry(self, width=550, height=20, font=custom_font, placeholder_text=self.name.get()).grid(row=0, column=0, padx=10, pady=10)
+		CTkLabel(self, width=100, height=20, font=custom_font, text=self.points.get(), padx=10).grid(row=1, column=0)
+
+		self.grid(padx=10, pady=10, ipady=10)
+		self.configure(border_width=5)
+
+		self.bind('<FocusIn>', lambda event: self.configure(border_color='#fff'))
+		self.bind('<FocusOut>', lambda event: self.configure(border_color='#000'))
+		self.bind('<Button-1>', lambda event: event.widget.focus_set()) # Event when widget is clicked
+		self.bind('<Button-1>', lambda event: self.click())
+
+	def click(self):
+		global current_widget
+		current_widget = self
+		print(current_widget.points.get())
+		
+
+	# players[index].append(self)
+
+		
+
 
 for x in players:
-	player_frame = CTkFrame(leftframe, width=600, height=200)
-	player_frame.grid(row=players.index(x), column=0)
-
+	a = PlayerWidget(leftframe, players.index(x))
+	a.points.set(x[1]*10)
+	a.update_idletasks()
 
 ## Right Frame
 
@@ -129,7 +189,7 @@ spdonebutton.grid(row=0, column=11)
 pointsvar = IntVar()
 pointsvar.set(100)
 
-points_label = CTkLabel(rightframe, text=pointsvar.get(), font=('Calibri', 30), text_color=colourmain)
+points_label = CTkLabel(rightframe, text=pointsvar.get(), font=custom_font_title, text_color=colourmain, padx=10)
 points_label.grid(row=rows.index('points'), column=0)
 
 # ## Progress bar - normal tkinter
@@ -148,6 +208,12 @@ def flash(type):
 			time.sleep(0.1)
 			progbar.configure(progress_color=colourmain)
 			time.sleep(0.1)
+	if type == 'pointless':
+		for loop in range(10):
+			progbar.configure(fg_color='#00ff00')
+			time.sleep(0.1)
+			progbar.configure(fg_color='#000')
+			time.sleep(0.1)
 
 global progvar
 progvar = IntVar()
@@ -158,5 +224,9 @@ progbar.grid(row=rows.index('progbar'),column=0, pady=10)
 ## Run button
 run_button = CTkButton(rightframe, text='RUN', command=lambda:threading.Thread(target=lambda: run(pointless_score)).start(), fg_color=colourmain, hover_color=colourdark, text_color='black', state='normal', text_color_disabled=colourdark)
 run_button.grid(row=rows.index('run'),column=0)
+
+
+# https://www.geeksforgeeks.org/python-focus_set-and-focus_get-method/
+# master.bind_all('<Button-1>', lambda event: focus(event))
 
 master.mainloop()
