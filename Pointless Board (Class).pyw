@@ -114,7 +114,7 @@ title_label.grid(row=0, column=0, sticky='nsew')
 
 
 
-players = [['Default', 0]] # needs to have focus
+players = [['Default', 0]]
 current_widget = None
 
 class PlayerWidget(CTkFrame):
@@ -125,9 +125,7 @@ class PlayerWidget(CTkFrame):
 		self.name = players[index][0]
 		self.points = players[index][1]
 
-
-
-		self.name_entry = CTkEntry(self, width=550, height=20, font=(custom_font, 20), placeholder_text=self.name)
+		self.name_entry = CTkEntry(self, width=550, height=20, font=(custom_font, 20), placeholder_text = 'Enter team name')
 		self.name_entry.grid(row=0, column=0, padx=10, pady=10)
 
 		self.points_label = CTkLabel(self, width=100, height=20, font=(custom_font, 20), text=self.points, padx=10)
@@ -136,14 +134,19 @@ class PlayerWidget(CTkFrame):
 		self.grid(padx=10, pady=10, ipady=10)
 		self.configure(border_width=5)
 
-		self.bind('<FocusIn>', lambda event: self.configure(border_color='#fff'))
-		self.bind('<FocusOut>', lambda event: self.configure(border_color='#000'))
-		self.bind('<Button-1>', lambda event: event.widget.focus_set()) # Event when widget is clicked
-		self.bind('<Button-1>', lambda event: self.click())
+		# Bind clicking event to all widgets in class so you can click any of them to get focus
+		for x in [self, self.name_entry, self.points_label]:
+			x.bind('<FocusIn>', lambda event: self.configure(border_color='#fff'))
+			x.bind('<FocusOut>', lambda event: self.configure(border_color='#000'))
+			x.bind('<Button-1>', lambda event: event.widget.focus_set()) # Event when widget is clicked
+			x.bind('<Button-1>', lambda event: self.click(index))
+		
 
-	def click(self):
+	# On click set currently selected widget
+	def click(self, index):
 		global current_widget
 		current_widget = self
+		players[index][0] = self.name_entry.get()
 		
 
 	# players[index].append(self)
